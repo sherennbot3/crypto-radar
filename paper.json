@@ -1,5 +1,5 @@
 {
- "updated": 1787254472,
+ "updated": 1787255132,
  "config": {
   "leverage": 50.0,
   "risk_frac": 0.15,
@@ -7,52 +7,26 @@
   "take_profit": 0.6,
   "start_balance": 1000.0
  },
- "equity": 971.4,
- "balance": 521.4,
- "roi_pct": -2.86,
+ "equity": 904.67,
+ "balance": 754.67,
+ "roi_pct": -9.53,
  "upnl": 0.0,
- "realized": 65.93,
+ "realized": 1.83,
  "wins": 53,
- "closed_count": 124,
+ "closed_count": 127,
  "open": [
   {
-   "coin": "ETH",
-   "side": "short",
-   "qty": 3.2262227384178606,
-   "entry": 2324.7,
-   "mark": 2324.7,
-   "entry_fmt": "2,324.70",
-   "mark_fmt": "2,324.70",
+   "coin": "SOL",
+   "side": "long",
+   "qty": 85.78487441094387,
+   "entry": 87.428,
+   "mark": 87.428,
+   "entry_fmt": "87.4280",
+   "mark_fmt": "87.4280",
    "margin": 150.0,
-   "upnl": -0.0,
-   "pct": -0.0,
-   "t": 1787254471
-  },
-  {
-   "coin": "AVAX",
-   "side": "short",
-   "qty": 1050.758647743671,
-   "entry": 7.1377,
-   "mark": 7.1377,
-   "entry_fmt": "7.1377",
-   "mark_fmt": "7.1377",
-   "margin": 150.0,
-   "upnl": -0.0,
-   "pct": -0.0,
-   "t": 1787254471
-  },
-  {
-   "coin": "LINK",
-   "side": "short",
-   "qty": 704.1592338747536,
-   "entry": 10.651,
-   "mark": 10.651,
-   "entry_fmt": "10.6510",
-   "mark_fmt": "10.6510",
-   "margin": 150.0,
-   "upnl": -0.0,
-   "pct": -0.0,
-   "t": 1787254472
+   "upnl": 0.0,
+   "pct": 0.0,
+   "t": 1787255131
   }
  ],
  "closed": [
@@ -1543,37 +1517,45 @@
    "pct": 26.79,
    "reason": "signal-exit",
    "t": 1787254471
+  },
+  {
+   "coin": "ETH",
+   "side": "short",
+   "entry": 2324.7,
+   "exit": 2331.6,
+   "entry_fmt": "2,324.70",
+   "exit_fmt": "2,331.60",
+   "pnl": -24.89,
+   "pct": -14.84,
+   "reason": "signal-exit",
+   "t": 1787255131
+  },
+  {
+   "coin": "AVAX",
+   "side": "short",
+   "entry": 7.1377,
+   "exit": 7.1613,
+   "entry_fmt": "7.1377",
+   "exit_fmt": "7.1613",
+   "pnl": -27.43,
+   "pct": -16.53,
+   "reason": "signal-exit",
+   "t": 1787255131
+  },
+  {
+   "coin": "LINK",
+   "side": "short",
+   "entry": 10.651,
+   "exit": 10.664,
+   "entry_fmt": "10.6510",
+   "exit_fmt": "10.6640",
+   "pnl": -11.78,
+   "pct": -6.1,
+   "reason": "signal-exit",
+   "t": 1787255132
   }
  ],
  "equity_curve": [
-  {
-   "t": 1787246813,
-   "equity": 1123.42
-  },
-  {
-   "t": 1787246813,
-   "equity": 1104.95
-  },
-  {
-   "t": 1787246814,
-   "equity": 1104.95
-  },
-  {
-   "t": 1787247209,
-   "equity": 1106.11
-  },
-  {
-   "t": 1787247209,
-   "equity": 1107.65
-  },
-  {
-   "t": 1787247210,
-   "equity": 1110.19
-  },
-  {
-   "t": 1787247210,
-   "equity": 1109.41
-  },
   {
    "t": 1787247210,
    "equity": 1108.64
@@ -2345,6 +2327,34 @@
   {
    "t": 1787254472,
    "equity": 971.4
+  },
+  {
+   "t": 1787255131,
+   "equity": 971.4
+  },
+  {
+   "t": 1787255131,
+   "equity": 946.51
+  },
+  {
+   "t": 1787255131,
+   "equity": 943.88
+  },
+  {
+   "t": 1787255131,
+   "equity": 943.88
+  },
+  {
+   "t": 1787255131,
+   "equity": 943.88
+  },
+  {
+   "t": 1787255131,
+   "equity": 916.45
+  },
+  {
+   "t": 1787255132,
+   "equity": 904.67
   }
  ]
 }
