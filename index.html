@@ -44,6 +44,22 @@
   @keyframes sp{to{transform:rotate(360deg)}}
   .barmini{height:5px;border-radius:3px;background:#21262d;overflow:hidden;flex:1;max-width:120px}
   .barmini>i{display:block;height:100%}
+  /* paper trade */
+  .pstats{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:baseline}
+  .peq{font-size:1.5rem;font-weight:800;font-variant-numeric:tabular-nums}
+  .proi{font-size:1rem;font-weight:700;font-variant-numeric:tabular-nums}
+  .pk{color:var(--mut);font-size:.74rem;text-transform:uppercase;letter-spacing:.08em}
+  .pv{font-weight:700;font-size:.86rem;font-variant-numeric:tabular-nums}
+  .pcell{display:flex;flex-direction:column;gap:1px}
+  .pcfg{color:var(--mut);font-size:.74rem;margin-top:8px}
+  .spark{width:100%;height:64px;display:block;margin:10px 0 4px}
+  .plabel{font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--mut);margin:12px 0 4px;border-top:1px solid var(--line);padding-top:10px}
+  .prow{padding:7px 0;border-top:1px solid var(--line)}
+  .prow:first-of-type{border-top:0}
+  .pline{display:flex;align-items:baseline;gap:8px}
+  .psub{color:var(--mut);font-size:.74rem;margin-top:2px;font-variant-numeric:tabular-nums}
+  .stale{color:var(--gold)}
 </style>
 </head>
 <body>
@@ -58,6 +74,10 @@
 </header>
 
 <main>
+  <section>
+    <p class="stitle">📄 Paper Trade · Hyperliquid</p>
+    <div id="paper"><div class="empty"><span class="spin"></span> memuat data paper trade…</div></div>
+  </section>
   <section>
     <p class="stitle">⭐ Pilihan Entry Potensial</p>
     <div id="picks"><div class="empty">Tekan Refresh untuk memindai…</div></div>
@@ -206,11 +226,116 @@ function renderBreaks(rows){
     </div>`).join("");
 }
 
-$("refresh").onclick=scan;
+/* ---------- Paper Trade (Hyperliquid sim) ---------- */
+const PAPER_URL="https://raw.githubusercontent.com/sherennbot3/crypto-radar/main/paper.json";
+
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function sgnCls(v){return v>=0?"up":"down";}
+function money(v,d=2){return (v<0?"-":"+")+"$"+Math.abs(v).toFixed(d);}
+function agoText(ts){
+  const m=Math.floor((Date.now()/1000-ts)/60);
+  if(m<1)return"baru saja";
+  if(m<60)return`${m} menit lalu`;
+  const h=Math.floor(m/60);
+  if(h<24)return`${h} jam lalu`;
+  return`${Math.floor(h/24)} hari lalu`;
+}
+
+function sparkline(curve,baseline){
+  if(!curve||curve.length<2)return'<div class="empty">Belum cukup data equity untuk grafik.</div>';
+  const vals=curve.map(p=>p.equity);
+  const W=600,H=120,pad=6;
+  let lo=Math.min(...vals,baseline),hi=Math.max(...vals,baseline);
+  if(hi-lo<1e-9){hi=lo+1;}
+  const span=hi-lo;
+  const x=i=>pad+i*(W-2*pad)/(curve.length-1);
+  const y=v=>pad+(hi-v)*(H-2*pad)/span;
+  const pts=vals.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const last=vals[vals.length-1];
+  const col=last>=baseline?"var(--green)":"var(--red)";
+  const by=y(baseline).toFixed(1);
+  return`<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
+    aria-label="Grafik equity paper trade, terakhir $${last.toFixed(2)} dari modal awal $${baseline}">
+    <line x1="${pad}" y1="${by}" x2="${W-pad}" y2="${by}" stroke="var(--mut)"
+      stroke-width="1" stroke-dasharray="4 4" opacity=".7"></line>
+    <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2"
+      stroke-linejoin="round" stroke-linecap="round"></polyline>
+  </svg>`;
+}
+
+function renderPaper(d){
+  const el=$("paper");
+  const cfg=d.config||{};
+  const base=cfg.start_balance||1000;
+  const stale=(Date.now()/1000-d.updated)>1800;
+  const roiCls=d.roi_pct>=0?"up":"down";
+  const H=[];
+  H.push(`<div class="pstats">
+    <span class="peq">$${d.equity.toFixed(2)}</span>
+    <span class="proi ${roiCls}">${d.roi_pct>=0?"▲":"▼"} ${d.roi_pct.toFixed(2)}%</span>
+    <span class="pcell"><span class="pk">Free</span><span class="pv">$${d.balance.toFixed(2)}</span></span>
+    <span class="pcell"><span class="pk">uPnL</span><span class="pv ${sgnCls(d.upnl)}">${money(d.upnl)}</span></span>
+    <span class="pcell"><span class="pk">Realized</span><span class="pv ${sgnCls(d.realized)}">${money(d.realized)}</span></span>
+    <span class="pcell"><span class="pk">Win-rate</span><span class="pv">${d.wins}/${d.closed_count}</span></span>
+  </div>
+  <div class="pcfg">⚙️ ${cfg.leverage||10}x · SL ${Math.round((cfg.stop_loss||0.3)*100)}% · TP ${Math.round((cfg.take_profit||0.6)*100)}% · modal awal $${base}</div>`);
+
+  H.push(sparkline(d.equity_curve,base));
+
+  H.push('<p class="plabel">📌 Terbuka</p>');
+  if(d.open&&d.open.length){
+    H.push(d.open.map(p=>{
+      const arrow=p.side==="long"?"📈":"📉";
+      const pc=p.pct==null?"":`<span class="pv ${sgnCls(p.pct)}">${p.pct>=0?"+":""}${p.pct.toFixed(1)}%</span>`;
+      return`<div class="prow">
+        <div class="pline"><span class="sym">${arrow} ${esc(p.coin)}</span>${pc}
+          <span class="tag ${sgnCls(p.upnl)}">${money(p.upnl)}</span></div>
+        <div class="psub">e ${esc(p.entry_fmt)} → m ${esc(p.mark_fmt)} · m$${p.margin.toFixed(0)}</div>
+      </div>`;
+    }).join(""));
+  }else{
+    H.push('<div class="empty">Tidak ada posisi terbuka.</div>');
+  }
+
+  H.push('<p class="plabel">📕 Ditutup (8 terakhir)</p>');
+  const cl=(d.closed||[]).slice(-8).reverse();
+  if(cl.length){
+    H.push(cl.map(t=>{
+      const arrow=t.side==="long"?"📈":"📉";
+      const pc=t.pct==null?"":`<span class="pv ${sgnCls(t.pct)}">${t.pct>=0?"+":""}${t.pct.toFixed(1)}%</span>`;
+      const sub=t.entry_fmt
+        ?`e ${esc(t.entry_fmt)} → x ${esc(t.exit_fmt)} · ${esc(t.reason)}`
+        :`${esc(t.reason)}`;
+      return`<div class="prow">
+        <div class="pline"><span class="sym">${arrow} ${esc(t.coin)}</span>${pc}
+          <span class="tag ${sgnCls(t.pnl)}">${money(t.pnl)}</span></div>
+        <div class="psub">${sub}</div>
+      </div>`;
+    }).join(""));
+  }else{
+    H.push('<div class="empty">Belum ada trade yang ditutup.</div>');
+  }
+
+  H.push(`<div class="pcfg ${stale?"stale":""}">${stale?"⚠️ ":""}diperbarui ${agoText(d.updated)}</div>`);
+  el.innerHTML=H.join("");
+}
+
+async function loadPaper(){
+  try{
+    const d=await j(PAPER_URL+"?t="+Date.now());
+    renderPaper(d);
+  }catch(e){
+    $("paper").innerHTML='<div class="empty">📄 paper.json belum tersedia — data simulasi belum terpublikasi ('
+      +esc(e.message)+').</div>';
+  }
+}
+
+$("refresh").onclick=function(){scan();loadPaper();};
 $("auto").onclick=function(){
   if(autoTimer){clearInterval(autoTimer);autoTimer=null;this.textContent="⏱️ Auto: OFF";}
-  else{autoTimer=setInterval(scan,30000);this.textContent="⏱️ Auto: 30s";scan();}
+  else{autoTimer=setInterval(function(){scan();loadPaper();},30000);this.textContent="⏱️ Auto: 30s";scan();loadPaper();}
 };
+loadPaper();
 scan();
 </script>
 </body>
