@@ -278,7 +278,7 @@ function renderPaper(d){
     <span class="pcell"><span class="pk">Realized</span><span class="pv ${sgnCls(d.realized)}">${money(d.realized)}</span></span>
     <span class="pcell"><span class="pk">Win-rate</span><span class="pv">${d.wins}/${d.closed_count}</span></span>
   </div>
-  <div class="pcfg">⚙️ ${cfg.leverage||10}x · SL ${Math.round((cfg.stop_loss||0.3)*100)}% · TP ${Math.round((cfg.take_profit||0.6)*100)}% · modal awal $${base}</div>`);
+  <div class="pcfg">⚙️ ${cfg.leverage||10}x · margin ${Math.round((cfg.risk_frac||0.3)*100)}%/posisi · SL ${Math.round((cfg.stop_loss||0.3)*100)}% · TP ${Math.round((cfg.take_profit||0.6)*100)}% · modal awal $${base}</div>`);
 
   H.push(sparkline(d.equity_curve,base));
 
