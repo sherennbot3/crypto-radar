@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crypto Radar — Spike + Entry</title>
+<style>
+  :root{
+    --bg:#0d1117; --card:#161b22; --line:#232b36; --ink:#e6edf3; --mut:#8b949e;
+    --green:#3fb950; --red:#f85149; --gold:#d29922; --blue:#58a6ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    -webkit-font-smoothing:antialiased}
+  header{position:sticky;top:0;background:linear-gradient(180deg,#0d1117,#0d1117ee);
+    padding:16px;border-bottom:1px solid var(--line);z-index:5}
+  h1{margin:0;font-size:1.15rem;letter-spacing:.02em}
+  .sub{color:var(--mut);font-size:.78rem;margin-top:2px}
+  .bar{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap}
+  button{background:var(--blue);color:#08111f;border:0;border-radius:8px;
+    padding:10px 16px;font-weight:700;font-size:.9rem;cursor:pointer;min-height:44px}
+  button:active{transform:translateY(1px)}
+  button.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+  .status{color:var(--mut);font-size:.78rem}
+  main{padding:14px;max-width:760px;margin:0 auto}
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:14px;margin-bottom:14px}
+  .stitle{font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--mut);margin:0 0 10px}
+  .row{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+  .row:first-of-type{border-top:0}
+  .sym{font-weight:700;min-width:92px}
+  .px{color:var(--mut);font-size:.8rem;min-width:96px}
+  .tag{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+  .up{color:var(--green)} .down{color:var(--red)} .mut{color:var(--mut)}
+  .pill{font-size:.68rem;padding:2px 7px;border-radius:20px;border:1px solid var(--line);color:var(--mut)}
+  .pick{border-left:3px solid var(--gold);padding-left:9px}
+  .score{font-size:.72rem;color:var(--gold);font-weight:700}
+  .empty{color:var(--mut);font-size:.85rem;padding:8px 0}
+  .foot{color:var(--mut);font-size:.72rem;text-align:center;padding:10px 0 26px}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid var(--mut);
+    border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .barmini{height:5px;border-radius:3px;background:#21262d;overflow:hidden;flex:1;max-width:120px}
+  .barmini>i{display:block;height:100%}
+</style>
+</head>
+<body>
+<header>
+  <h1>📡 Crypto Radar</h1>
+  <div class="sub">Volume Spike × Breakout — pilihan entry potensial · Binance Futures (crypto only)</div>
+  <div class="bar">
+    <button id="refresh">🔄 Refresh</button>
+    <button class="ghost" id="auto">⏱️ Auto: OFF</button>
+    <span class="status" id="status">siap.</span>
+  </div>
+</header>
+
+<main>
+  <section>
+    <p class="stitle">⭐ Pilihan Entry Potensial</p>
+    <div id="picks"><div class="empty">Tekan Refresh untuk memindai…</div></div>
+  </section>
+  <section>
+    <p class="stitle">⚡ Volume Spike (5m ≥ 4×)</p>
+    <div id="spikes"><div class="empty">—</div></div>
+  </section>
+  <section>
+    <p class="stitle">📈 Resistance Breakout (1h)</p>
+    <div id="breaks"><div class="empty">—</div></div>
+  </section>
+  <div class="foot">🧪 Alat screening & simulasi — bukan sinyal / saran trading. Verifikasi sendiri.</div>
+</main>
+
+<script>
+const FAPI="https://fapi.binance.com";
+const $=id=>document.getElementById(id);
+let coinSet=null, autoTimer=null;
+
+async function j(u){const r=await fetch(u);if(!r.ok)throw new Error(r.status);return r.json();}
+
+async function cryptoCoins(){
+  if(coinSet)return coinSet;
+  const info=await j(FAPI+"/fapi/v1/exchangeInfo");
+  coinSet=new Set(info.symbols.filter(s=>s.underlyingType==="COIN"
+    && s.symbol.endsWith("USDT") && s.contractType==="PERPETUAL").map(s=>s.symbol));
+  return coinSet;
+}
+function ema(a,n){if(a.length<n)return null;const k=2/(n+1);let e=a.slice(0,n).reduce((x,y)=>x+y,0)/n;
+  for(let i=n;i<a.length;i++)e=a[i]*k+e*(1-k);return e;}
+function rsi(a,n=14){if(a.length<n+1)return 50;let g=0,l=0;
+  for(let i=a.length-n;i<a.length;i++){const d=a[i]-a[i-1];if(d>0)g+=d;else l-=d;}
+  if(l===0)return 100;const rs=(g/n)/(l/n);return 100-100/(1+rs);}
+function median(a){const b=[...a].sort((x,y)=>x-y);const m=b.length>>1;
+  return b.length%2?b[m]:(b[m-1]+b[m])/2;}
+
+async function analyze(sym){
+  // 5m for spike, 1h for breakout + trend
+  const [k5,k1]=await Promise.all([
+    j(`${FAPI}/fapi/v1/klines?symbol=${sym}&interval=5m&limit=27`),
+    j(`${FAPI}/fapi/v1/klines?symbol=${sym}&interval=1h&limit=72`)
+  ]);
+  // spike
+  const closed=k5.slice(0,-1), latest=closed[closed.length-1], prior=closed.slice(-25,-1);
+  const vols=prior.map(c=>+c[7]), base=median(vols)||1, lv=+latest[7];
+  const spike=lv/base, o=+latest[1], c=+latest[4], move=(c-o)/o*100;
+  // breakout on 1h
+  const highs=k1.map(c=>+c[2]), closes=k1.map(c=>+c[4]);
+  const last=closes[closes.length-1];
+  const resist=Math.max(...highs.slice(0,-3));
+  const priorClose=closes[closes.length-4];
+  const above=(last-resist)/resist;
+  const brkVol=Math.max(...k1.slice(-3).map(c=>+c[7]));
+  const baseVol=median(k1.slice(-72,-3).map(c=>+c[7]))||1;
+  const volx=brkVol/baseVol;
+  const fresh = last>resist && priorClose<=resist && above>=0.004;
+  const trendUp = ema(closes,9) > ema(closes,21);
+  const trendDn = ema(closes,9) < ema(closes,21);
+  const r=rsi(closes,14);
+  const breakout = fresh && volx>=1.8;
+  // direction bias
+  let dir="flat";
+  if(trendUp && r<72 && move>=0) dir="long";
+  else if(trendDn && r>28 && move<=0) dir="short";
+  return {sym,price:c,spike,move,spikeVolM:lv/1e6,breakout,above:above*100,volx,dir,trendUp,r};
+}
+
+function fmtPrice(p){return p>=100?p.toFixed(2):p>=1?p.toFixed(4):p.toPrecision(4);}
+function name(s){return s.replace("USDT","");}
+
+async function scan(){
+  const st=$("status"); st.innerHTML='<span class="spin"></span> memindai…';
+  try{
+    const coins=await cryptoCoins();
+    const t=await j(FAPI+"/fapi/v1/ticker/24hr");
+    let uni=t.filter(d=>coins.has(d.symbol) && +d.quoteVolume>=10e6)
+      .sort((a,b)=>+b.quoteVolume-+a.quoteVolume).slice(0,60).map(d=>d.symbol);
+    // analyze with small concurrency
+    const out=[];
+    const q=[...uni];
+    async function worker(){while(q.length){const s=q.shift();try{out.push(await analyze(s));}catch(e){}}}
+    await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
+
+    const spikes=out.filter(o=>o.spike>=4).sort((a,b)=>b.spike-a.spike);
+    const breaks=out.filter(o=>o.breakout).sort((a,b)=>b.volx-a.volx);
+
+    // PICKS: coins that show BOTH a spike AND a fresh breakout, with a clear directional bias.
+    const picks=out.map(o=>{
+      let score=0;
+      if(o.spike>=4) score+=Math.min(o.spike,20);
+      if(o.breakout) score+=25+Math.min(o.volx,20);
+      if(o.dir!=="flat") score+=10;
+      if(o.spike>=4 && o.breakout) score+=25; // confluence bonus
+      return {...o,score};
+    }).filter(o=>o.score>=35 && o.dir!=="flat")
+      .sort((a,b)=>b.score-a.score).slice(0,6);
+
+    renderPicks(picks); renderSpikes(spikes); renderBreaks(breaks);
+    st.textContent="update: "+new Date().toLocaleTimeString('id-ID');
+  }catch(e){ st.textContent="gagal: "+e.message; }
+}
+
+function dirTag(o){
+  if(o.dir==="long")return '<span class="tag up">📈 LONG</span>';
+  if(o.dir==="short")return '<span class="tag down">📉 SHORT</span>';
+  return '<span class="tag mut">flat</span>';
+}
+function renderPicks(rows){
+  const el=$("picks");
+  if(!rows.length){el.innerHTML='<div class="empty">Belum ada konfluensi kuat (spike + breakout searah) saat ini.</div>';return;}
+  el.innerHTML=rows.map(o=>{
+    const flags=[];
+    if(o.spike>=4)flags.push(`⚡${o.spike.toFixed(1)}×`);
+    if(o.breakout)flags.push(`📈+${o.above.toFixed(1)}%`);
+    return `<div class="row pick">
+      <span class="sym">${name(o.sym)}</span>
+      <span class="px">$${fmtPrice(o.price)}</span>
+      <span class="pill">${flags.join(" · ")}</span>
+      <span class="score">${Math.round(o.score)}</span>
+      ${dirTag(o)}
+    </div>`;
+  }).join("");
+}
+function renderSpikes(rows){
+  const el=$("spikes");
+  if(!rows.length){el.innerHTML='<div class="empty">Tidak ada spike ≥4× sekarang.</div>';return;}
+  el.innerHTML=rows.slice(0,12).map(o=>{
+    const up=o.move>=0;
+    return `<div class="row">
+      <span class="sym">${name(o.sym)}</span>
+      <span class="px">$${fmtPrice(o.price)}</span>
+      <span class="pill">${o.spike.toFixed(1)}× · $${o.spikeVolM.toFixed(2)}jt</span>
+      <span class="tag ${up?'up':'down'}">${up?'▲':'▼'} ${o.move.toFixed(2)}%</span>
+    </div>`;
+  }).join("");
+}
+function renderBreaks(rows){
+  const el=$("breaks");
+  if(!rows.length){el.innerHTML='<div class="empty">Tidak ada breakout resistance 1h.</div>';return;}
+  el.innerHTML=rows.slice(0,12).map(o=>`<div class="row">
+      <span class="sym">${name(o.sym)}</span>
+      <span class="px">$${fmtPrice(o.price)}</span>
+      <span class="pill">vol ${o.volx.toFixed(1)}×</span>
+      <span class="tag up">+${o.above.toFixed(1)}%</span>
+    </div>`).join("");
+}
+
+$("refresh").onclick=scan;
+$("auto").onclick=function(){
+  if(autoTimer){clearInterval(autoTimer);autoTimer=null;this.textContent="⏱️ Auto: OFF";}
+  else{autoTimer=setInterval(scan,30000);this.textContent="⏱️ Auto: 30s";scan();}
+};
+scan();
+</script>
+</body>
+</html>
