@@ -1,5 +1,5 @@
 {
- "updated": 1787991751,
+ "updated": 1787992411,
  "config": {
   "leverage": 20.0,
   "risk_frac": 0.2,
@@ -7,10 +7,10 @@
   "take_profit": 0.6,
   "start_balance": 1000.0
  },
- "equity": 268.08,
+ "equity": 263.0,
  "balance": 144.52,
- "roi_pct": -73.19,
- "upnl": 5.08,
+ "roi_pct": -73.7,
+ "upnl": 0.0,
  "realized": 0.0,
  "wins": 0,
  "closed_count": 0,
@@ -20,12 +20,12 @@
    "side": "short",
    "qty": 469.2800133022947,
    "entry": 0.84196,
-   "mark": 0.83772,
+   "mark": 0.84196,
    "entry_fmt": "0.84196",
-   "mark_fmt": "0.83772",
+   "mark_fmt": "0.84196",
    "margin": 39.51,
-   "upnl": 1.99,
-   "pct": 10.07,
+   "upnl": -0.0,
+   "pct": -0.0,
    "t": 1787953394
   },
   {
@@ -33,12 +33,12 @@
    "side": "short",
    "qty": 218.4223255669248,
    "entry": 1.808,
-   "mark": 1.7881,
+   "mark": 1.808,
    "entry_fmt": "1.8080",
-   "mark_fmt": "1.7881",
+   "mark_fmt": "1.8080",
    "margin": 39.49,
-   "upnl": 4.35,
-   "pct": 22.01,
+   "upnl": -0.0,
+   "pct": -0.0,
    "t": 1787953394
   },
   {
@@ -46,12 +46,12 @@
    "side": "short",
    "qty": 738.3094615667264,
    "entry": 0.5346,
-   "mark": 0.5363,
+   "mark": 0.5346,
    "entry_fmt": "0.53460",
-   "mark_fmt": "0.53630",
+   "mark_fmt": "0.53460",
    "margin": 39.47,
-   "upnl": -1.26,
-   "pct": -6.36,
+   "upnl": -0.0,
+   "pct": -0.0,
    "t": 1787953395
   }
  ],
